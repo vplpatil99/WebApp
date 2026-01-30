@@ -14,7 +14,7 @@ function Orders() {
   // const [date, setDate] = useState(new Date().toISOString().split("T")[0]);
   const [openStatus, setOpenStatus] = useState(false);
   const [selectedOrder, setSelectedOrder] = useState(null);
-
+const [searchValue, setSearchValue] = useState("");
   const [stageData, setStageData] = useState([]);
   const [deliveryData, setDeliveryData] = useState([]);
 
@@ -140,6 +140,7 @@ function Orders() {
 
 const handleModalSearch = async (gOrderNo) => {
   try {
+    setSearchValue(gOrderNo); // 👈 updates modal input
     const res = await api.get(`/orders/details/${gOrderNo}`);
     setSelectedOrder(res.data.order);
     setStageData(res.data.stages);
@@ -438,14 +439,26 @@ useEffect(() => {
             
             
       )}
-    <OrderStatusModal
+    {/* <OrderStatusModal
       isOpen={openStatus}
       onClose={() => setOpenStatus(false)}
       order={selectedOrder}
       stages={stageData}
       delivery={deliveryData}
       onSearch={handleModalSearch}
+    /> */}
+    
+    <OrderStatusModal
+      isOpen={openStatus}
+      onClose={() => setOpenStatus(false)}
+      order={selectedOrder}
+      stages={stageData}
+      delivery={deliveryData}
+      searchValue={searchValue}
+      setSearchValue={setSearchValue}
+      onSearch={handleModalSearch}
     />
+
     </div>
   );
 }

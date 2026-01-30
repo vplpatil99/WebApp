@@ -19,6 +19,8 @@ public partial class AppDbContext : DbContext
 
     public virtual DbSet<CancelledOrder> CancelledOrders { get; set; }
 
+    public virtual DbSet<CourierMaster> CourierMasters { get; set; }
+
     public virtual DbSet<Delivery> Deliveries { get; set; }
 
     public virtual DbSet<LabCoMaster> LabCoMasters { get; set; }
@@ -101,6 +103,28 @@ public partial class AppDbContext : DbContext
             entity.Property(e => e.Rqty).HasColumnName("RQty");
             entity.Property(e => e.UpdateDate).HasColumnType("datetime");
             entity.Property(e => e.UserName).HasMaxLength(25);
+        });
+
+        modelBuilder.Entity<CourierMaster>(entity =>
+        {
+            entity
+                .HasNoKey()
+                .ToTable("CourierMaster");
+
+            entity.Property(e => e.Active).HasMaxLength(1);
+            entity.Property(e => e.Address).HasMaxLength(100);
+            entity.Property(e => e.Area).HasMaxLength(50);
+            entity.Property(e => e.City).HasMaxLength(50);
+            entity.Property(e => e.Country).HasMaxLength(50);
+            entity.Property(e => e.CourierZone).HasMaxLength(50);
+            entity.Property(e => e.Email).HasMaxLength(50);
+            entity.Property(e => e.Fax).HasMaxLength(50);
+            entity.Property(e => e.Name).HasMaxLength(50);
+            entity.Property(e => e.PersonIncharge).HasMaxLength(50);
+            entity.Property(e => e.Phone).HasMaxLength(50);
+            entity.Property(e => e.State).HasMaxLength(50);
+            entity.Property(e => e.Website).HasMaxLength(50);
+            entity.Property(e => e.ZipCode).HasMaxLength(15);
         });
 
         modelBuilder.Entity<Delivery>(entity =>

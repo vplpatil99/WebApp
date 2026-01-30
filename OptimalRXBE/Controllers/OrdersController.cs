@@ -164,31 +164,113 @@ namespace OptimalRXBE.Controllers
             // 🔹 Production stages
             var stages = await _db.Stagescompleteds
                 .Where(s => s.GOrderno == gOrderNo)
-                .OrderBy(s => s.Id)
+                .OrderByDescending(s => s.CompletionTime)
                 .Select(s => new
                 {
-                    date = s.CompletionDate.HasValue
-                        ? s.CompletionDate.Value.ToString("yyyy-MM-dd")
+                    date = s.CompletionTime.HasValue
+                        ? s.CompletionTime.Value.ToString("yyyy-MM-dd HH:mm:ss")
                         : "",
-                    time = s.CompletionTime,
-                    stageName = s.StageName
+                    stageName = s.StageName+"-"+s.StageNumber+"-"+s.UserName
                 })
                 .ToListAsync();
 
-            // 🔹 Delivery
-            var delivery = await _db.Deliveries
-                .Where(d => d.GOrderNo == gOrderNo)
-                .Select(d => new
+            // // 🔹 Delivery
+            // var delivery = await _db.Deliveries
+            //     .Where(d => d.GOrderNo == gOrderNo)
+            //     .Select(d => new
+            //     {
+            //         date = d.Dtime.HasValue
+            //             ? d.Dtime.Value.ToString("yyyy-MM-ddTHH:mm:ss")
+            //             : "",
+            //         challanNo = d.ChallanNo,
+            //         mode = d.ModeofDel,
+            //         // awbNo = d.AWBNo,
+            //         // contact = d.ContactNo
+            //     })
+            //     .ToListAsync();
+
+            var delivery = await (
+                from d in _db.Deliveries
+                join c in _db.CourierMasters
+                    on d.DCcode equals c.CourierId   // adjust column if different
+                where d.GOrderNo == gOrderNo
+                select new
                 {
                     date = d.Dtime.HasValue
-                        ? d.Dtime.Value.ToString("yyyy-MM-ddTHH:mm:ss")
+                        ? d.Dtime.Value.ToString("yyyy-MM-dd HH:mm:ss")
                         : "",
                     challanNo = d.ChallanNo,
                     mode = d.ModeofDel,
-                    // awbNo = d.AWBNo,
-                    // contact = d.ContactNo
-                })
-                .ToListAsync();
+                    courierName = c.Name,
+                    contact = c.Phone
+                }
+            ).ToListAsync();
+
+
+
+            var powers = new List<object>();
+
+            int rQty = int.TryParse(order.oo.Rqty, out var rq) ? rq : 0;
+            int lQty = int.TryParse(order.oo.Lqty, out var lq) ? lq : 0;
+
+            if (rQty > 0)
+            {
+                powers.Add(new
+                {
+                    eye = "R",
+                    sph = order.oo.Rsph,
+                    cyl = order.oo.Rcyl,
+                    axis = order.oo.Raxis,
+                    addn = order.oo.Raddn,
+                    qty = order.oo.Rqty,
+                    process = order.om.Rprocessed
+                });
+            }
+
+            if (lQty > 0)
+            {
+                powers.Add(new
+                {
+                    eye = "L",
+                    sph = order.oo.Lsph,
+                    cyl = order.oo.Lcyl,
+                    axis = order.oo.Laxis,
+                    addn = order.oo.Laddn,
+                    qty = order.oo.Lqty,
+                    process = order.om.Lprocessed
+                });
+            }
+
+
+            string rawCustomerName = !string.IsNullOrWhiteSpace(order.oo.PartyCustomerName)
+                                        ? order.oo.PartyCustomerName
+                                        : order.om.FinishedLensSource;
+
+            string opticianName = "";
+            string consumerName = rawCustomerName;
+
+            if (!string.IsNullOrWhiteSpace(rawCustomerName) && rawCustomerName.Contains("/"))
+            {
+                var parts = rawCustomerName.Split('/', 2); // split only once
+                opticianName = parts[0].Trim();
+                consumerName = parts.Length > 1 ? parts[1].Trim() : "";
+            }
+
+            var stock = order.oo.Stock; // or entity.Stock
+
+            bool chkSurface = false;
+            bool chkCoat = false;
+            bool chkTint = false;
+            bool chkFit = false;
+
+            if (!string.IsNullOrEmpty(stock))
+            {
+                chkSurface = stock.Contains("S");
+                chkCoat    = stock.Contains("C");
+                chkTint    = stock.Contains("T");
+                chkFit     = stock.Contains("F");
+            }
+
 
             // 🔹 Final response (modal friendly)
             return Ok(new
@@ -203,10 +285,28 @@ namespace OptimalRXBE.Controllers
                     partyName = order.pd.PartyName,
                     orderNo = order.om.OrderNo,
                     lensType = order.om.LensType,
-                    // rightEye = order.om.RightEye,
-                    // leftEye = order.om.LeftEye,
-                    // lensSize = order.om.LensSize,
-                    remarks = order.om.Remarks
+                    coatColor = order.om.CoatColor,
+                    category=order.om.SingleVisionMultiFocal,
+                    size = order.om.LensSize,
+                    opticianName,
+                    consumerName,
+                    trayNo = order.oi.TrayNo,
+                    fitting= order.om.Fitting,
+                    frameType= order.om.ToolRemarks,
+                    trayColor = order.oi.TrayColor, 
+                    tintColor = order.om.TintColor,
+                    price = order.om.ActualRate,
+                    additional = order.om.AdditionalRate,
+                    discount = order.om.DiscountRate,
+                    taxable = order.om.Rate,
+                    registerNo = order.om.RegisterNo,
+                    partyOrderRefNo = order.om.PartyOrderRefNo,
+                    remarks = order.om.Remarks,
+                    powers,
+                    isOnlyCoating = chkCoat,
+                    isOnlySurface = chkSurface,
+                    isOnlyTint = chkTint,
+                    isOnlyFitting = chkFit
                 },
                 stages,
                 delivery
