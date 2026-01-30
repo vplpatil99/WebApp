@@ -14,5 +14,6 @@ namespace OptimalRXBE.DTOs
         public string L_OrderNo { get; set; } = null!;
         public string registerno { get; set; } = null!;
         public string party_cust_code { get; set; } = null!;
+        public string marketingPerson { get; set; } = null!;
     }
 }

@@ -27,45 +27,113 @@ const [searchValue, setSearchValue] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const pageSize = 20;
 
+  const [filterPartyCode, setFilterPartyCode] = useState("");
+const [filterMarketing, setFilterMarketing] = useState("");
+
   // sorting state
   const [sortConfig, setSortConfig] = useState({
     key: null,
     direction: "asc",
   });
 
+
+
+  const filteredOrders = useMemo(() => {
+  return orders.filter(o => {
+    const partyMatch = filterPartyCode
+      ? o.party_code?.toLowerCase().includes(filterPartyCode.toLowerCase())
+      : true;
+
+    const marketingMatch = filterMarketing
+      ? o.marketingPerson?.toLowerCase().includes(filterMarketing.toLowerCase())
+      : true;
+
+    return partyMatch && marketingMatch;
+  });
+}, [orders, filterPartyCode, filterMarketing]);
+
+const partySuggestions = useMemo(() => {
+  if (!filterPartyCode) return [];
+  return [...new Set(
+    orders
+      .map(o => o.party_code)
+      .filter(p =>
+        p && p.toLowerCase().includes(filterPartyCode.toLowerCase())
+      )
+  )].slice(0, 6);
+}, [filterPartyCode, orders]);
+
+const marketingSuggestions = useMemo(() => {
+  if (!filterMarketing) return [];
+  return [...new Set(
+    orders
+      .map(o => o.marketingPerson)
+      .filter(m =>
+        m && m.toLowerCase().includes(filterMarketing.toLowerCase())
+      )
+  )].slice(0, 6);
+}, [filterMarketing, orders]);
   // 🔹 SORT FIRST
+  // const sortedOrders = useMemo(() => {
+  //   if (!sortConfig.key) return orders;
+
+  //   const sorted = [...orders].sort((a, b) => {
+  //     let aVal = a[sortConfig.key];
+  //     let bVal = b[sortConfig.key];
+
+  //     if (aVal == null) return 1;
+  //     if (bVal == null) return -1;
+
+  //     if (
+  //       sortConfig.key === "order_Date" ||
+  //       sortConfig.key === "receivedOnDate" ||
+  //       sortConfig.key === "orderEntryTime"
+  //     ) {
+  //       aVal = new Date(aVal);
+  //       bVal = new Date(bVal);
+  //     }
+
+  //     if (typeof aVal === "number" && typeof bVal === "number") {
+  //       return sortConfig.direction === "asc"
+  //         ? aVal - bVal
+  //         : bVal - aVal;
+  //     }
+
+  //     return sortConfig.direction === "asc"
+  //       ? String(aVal).localeCompare(String(bVal))
+  //       : String(bVal).localeCompare(String(aVal));
+  //   });
+
+  //   return sorted;
+  // }, [orders, sortConfig]);
+
   const sortedOrders = useMemo(() => {
-    if (!sortConfig.key) return orders;
+  if (!sortConfig.key) return filteredOrders;
 
-    const sorted = [...orders].sort((a, b) => {
-      let aVal = a[sortConfig.key];
-      let bVal = b[sortConfig.key];
+  const sorted = [...filteredOrders].sort((a, b) => {
+    let aVal = a[sortConfig.key];
+    let bVal = b[sortConfig.key];
 
-      if (aVal == null) return 1;
-      if (bVal == null) return -1;
+    if (aVal == null) return 1;
+    if (bVal == null) return -1;
 
-      if (
-        sortConfig.key === "order_Date" ||
-        sortConfig.key === "receivedOnDate" ||
-        sortConfig.key === "orderEntryTime"
-      ) {
-        aVal = new Date(aVal);
-        bVal = new Date(bVal);
-      }
+    if (
+      sortConfig.key === "order_Date" ||
+      sortConfig.key === "receivedOnDate" ||
+      sortConfig.key === "orderEntryTime"
+    ) {
+      aVal = new Date(aVal);
+      bVal = new Date(bVal);
+    }
 
-      if (typeof aVal === "number" && typeof bVal === "number") {
-        return sortConfig.direction === "asc"
-          ? aVal - bVal
-          : bVal - aVal;
-      }
+    return sortConfig.direction === "asc"
+      ? String(aVal).localeCompare(String(bVal))
+      : String(bVal).localeCompare(String(aVal));
+  });
 
-      return sortConfig.direction === "asc"
-        ? String(aVal).localeCompare(String(bVal))
-        : String(bVal).localeCompare(String(aVal));
-    });
+  return sorted;
+}, [filteredOrders, sortConfig]);
 
-    return sorted;
-  }, [orders, sortConfig]);
 
   // 🔹 NOW SAFE TO USE sortedOrders
   const totalRecords = sortedOrders.length;
@@ -91,52 +159,7 @@ const [searchValue, setSearchValue] = useState("");
     if (sortConfig.key !== key) return "↕";
     return sortConfig.direction === "asc" ? "↑" : "↓";
   };
-// const demoOrder = {
-//   gOrderNo: "GKB123456",
-//   trackNo: "TRK987654",
-//   poNo: "PO-456",
-//   statusText: "IN PRODUCTION",
-//   partyCode: "P001",
-//   partyName: "Vision Optics",
-//   orderNo: "ORD789",
-//   lensType: "Progressive",
-//   rightEye: "+1.50 / -0.50",
-//   leftEye: "+1.25 / -0.25",
-//   lensSize: "70",
-//   remarks: "Urgent order"
-// };
 
-// const demoStages = [
-//   { date: "2026-01-25", time: "10:30", stageName: "Order Entry" },
-//   { date: "2026-01-25", time: "12:00", stageName: "Surfacing" },
-//   { date: "2026-01-26", time: "09:15", stageName: "Coating" },
-//   { date: "2026-01-26", time: "16:00", stageName: "Dispatch" }
-// ];
-
-// const demoDelivery = [
-//   {
-//     date: "2026-01-27",
-//     challanNo: "CH123",
-//     mode: "Courier",
-//     awbNo: "AWB998877",
-//     contact: "9876543210"
-//   }
-// ];
-
-
-// const handleModalSearch = (gOrderNo) => {
-//   // 🔹 demo data lookup (replace with API later)
-//   if (gOrderNo === "GKB123456") {
-//     setSelectedOrder(demoOrder);
-//     setStageData(demoStages);
-//     setDeliveryData(demoDelivery);
-//   } else {
-//     setSelectedOrder(null);
-//     setStageData([]);
-//     setDeliveryData([]);
-//     alert("Order not found");
-//   }
-// };
 
 const handleModalSearch = async (gOrderNo) => {
   try {
@@ -205,8 +228,21 @@ useEffect(() => {
     <div className="p-6 bg-gray-100 min-h-screen">
       <h1 className="text-2xl font-bold mb-4">Orders</h1>
 
-    <div className="mb-4 flex gap-4 items-end">
+    {/* <div className="mb-4 flex gap-4 items-end">
       <div>
+
+      </div>
+
+      <div>
+
+      </div>
+
+
+    </div> */}
+
+      <div className="flex flex-wrap gap-4 mb-3 bg-white p-3 rounded border">
+
+        <div> 
         <label className="block text-sm font-semibold mb-1">From Date</label>
         <input
           type="date"
@@ -214,21 +250,116 @@ useEffect(() => {
           onChange={(e) => setFromDate(e.target.value)}
           className="border px-3 py-2 rounded"
         />
-      </div>
+        </div>
+        <div>
+          <label className="block text-sm font-semibold mb-1">To Date</label>
+          <input
+            type="date"
+            value={toDate}
+            onChange={(e) => setToDate(e.target.value)}
+            className="border px-3 py-2 rounded"
+          />
+        </div>
+        {/* Party Code Filter */}
+        {/* <div>
+          <label className="block text-sm font-semibold mb-1">Party Code</label>
+          <input
+            type="text"
+            value={filterPartyCode}
+            onChange={(e) => {
+              setFilterPartyCode(e.target.value);
+              setCurrentPage(1);
+            }}
+            placeholder="Filter party code"
+            className="border px-3 py-2 rounded"
+          />
+        </div> */}
 
-      <div>
-        <label className="block text-sm font-semibold mb-1">To Date</label>
-        <input
-          type="date"
-          value={toDate}
-          onChange={(e) => setToDate(e.target.value)}
-          className="border px-3 py-2 rounded"
-        />
+        <div className="relative">
+          <label className="block text-sm font-semibold mb-1">Party Code</label>
+          <input
+            type="text"
+            value={filterPartyCode}
+            onChange={(e) => {
+              setFilterPartyCode(e.target.value);
+              setCurrentPage(1);
+            }}
+            placeholder="Filter party code"
+            className="border px-3 py-2 rounded w-full"
+          />
+
+          {/* {partySuggestions.length > 0 && (
+            <div className="absolute z-30 bg-white border rounded shadow w-full mt-1 max-h-40 overflow-y-auto">
+              {partySuggestions.map((p, i) => (
+                <div
+                  key={i}
+                  onMouseDown={() => setFilterPartyCode(p)}
+                  className="px-3 py-1 text-sm hover:bg-blue-100 cursor-pointer"
+                >
+                  {p}
+                </div>
+              ))}
+            </div>
+          )} */}
+
+          {partySuggestions.length > 0 &&
+            filterPartyCode &&
+            !partySuggestions.includes(filterPartyCode) && (
+              <div className="absolute z-30 bg-white border rounded shadow w-full mt-1 max-h-40 overflow-y-auto">
+                {partySuggestions.map((p, i) => (
+                  <div
+                    key={i}
+                    onMouseDown={() => {
+                      setFilterPartyCode(p);
+                      setPartySuggestions([]); // 👈 hide dropdown after select
+                    }}
+                    className="px-3 py-1 text-sm hover:bg-blue-100 cursor-pointer"
+                  >
+                    {p}
+                  </div>
+                ))}
+              </div>
+            )}
+
+        </div>
+
+        {/* Marketing Person Filter */}
+        <div className="relative">
+          <label className="block text-sm font-semibold mb-1">Marketing Person</label>
+          <input
+            type="text"
+            value={filterMarketing}
+            onChange={(e) => {
+              setFilterMarketing(e.target.value);
+              setCurrentPage(1);
+            }}
+            placeholder="Filter marketing"
+            className="border px-3 py-2 rounded w-full"
+          />
+          {marketingSuggestions.length > 0 &&
+            filterMarketing &&
+            !marketingSuggestions.includes(filterMarketing) && (
+              <div className="absolute z-30 bg-white border rounded shadow w-full mt-1 max-h-40 overflow-y-auto">
+                {marketingSuggestions.map((m, i) => (
+                  <div
+                    key={i}
+                    onMouseDown={() => {
+                      setFilterMarketing(m);
+                      setMarketingSuggestions([]);
+                    }}
+                    className="px-3 py-1 text-sm hover:bg-blue-100 cursor-pointer"
+                  >
+                    {m}
+                  </div>
+                ))}
+              </div>
+            )}
+        </div>
+
       </div>
-    </div>
 
       {/* 🔹 Sticky Logo Selector */}
-      <div className="sticky top-0 z-30 bg-gray-100 pb-3">
+      <div className="z-30 bg-gray-100 pb-3">
         <div className="flex gap-4 p-4 bg-white rounded-xl shadow border">
           {[
             {
@@ -340,6 +471,7 @@ useEffect(() => {
                       <th className="px-4 py-3">L Order</th>
                       <th className="px-4 py-3">Reg No</th>
                       <th className="px-4 py-3">Customer</th>
+                      <th className="px-4 py-3">Marketing Person</th>
                     </tr>
                   </thead>
 
@@ -377,6 +509,7 @@ useEffect(() => {
                         <td className="px-4 py-2">{order.l_OrderNo}</td>
                         <td className="px-4 py-2">{order.registerno}</td>
                         <td className="px-4 py-2">{order.party_cust_code || "-"}</td>
+                        <td className="px-4 py-2">{order.marketingPerson || "-"}</td>
                       </tr>
                     ))}
                   </tbody>
@@ -439,15 +572,7 @@ useEffect(() => {
             
             
       )}
-    {/* <OrderStatusModal
-      isOpen={openStatus}
-      onClose={() => setOpenStatus(false)}
-      order={selectedOrder}
-      stages={stageData}
-      delivery={deliveryData}
-      onSearch={handleModalSearch}
-    /> */}
-    
+
     <OrderStatusModal
       isOpen={openStatus}
       onClose={() => setOpenStatus(false)}

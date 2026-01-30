@@ -51,20 +51,23 @@ const trayColors = {
         {/* ORDER HEADER INFO */}
         <div className="p-3 grid grid-cols-4 gap-2 bg-white border-b text-sm">
           <div>
-            <span className="font-semibold text-xs">General Order No</span>
+            <span className="font-semibold text-xs">{searchValue.length > 6 ? "Tracking No" : "General Order No"}</span>
             <input
-              type="text"
+              type="number"
               value={searchValue}
-              onChange={(e) => setSearchValue(e.target.value)}
+              onChange={(e) => {
+                const value = e.target.value;
+                if (value.length <= 9) setSearchValue(value);
+              }}
               onKeyDown={(e) => e.key === "Enter" && handleSearch()}
               className="border px-2 py-1 w-full text-sm"
             />
           </div>
 
           <div>
-            <span className="font-semibold text-red-600 text-xs">Track Number</span>
+            <span className="font-semibold text-red-600 text-xs">{searchValue.length > 6 ? "General Order No" : "Tracking No"}</span>
             <div className="border px-2 py-1 text-red-600 bg-gray-50 text-sm">
-              {order.trackNo}
+              {searchValue.length > 6 ? order.gOrderNo : order.trackNo}
             </div>
           </div>
 
@@ -134,7 +137,8 @@ const trayColors = {
         </div>
 
         {/* DELIVERY DETAILS */}
-        {delivery.length > 0 && (<div className="p-3">
+        {delivery.length > 0 && (
+          <div className="p-3">
           <h3 className="font-bold mb-1 text-sm">Delivery Details</h3>
           <div className="overflow-x-auto">
             <table className="w-full text-sm border-collapse">
@@ -168,7 +172,8 @@ const trayColors = {
               </tbody>
             </table>
           </div>
-        </div>)}
+        </div>
+      )}
 <div className="p-3">
   <h3 className="font-bold mb-1 text-sm">Order Details</h3>
   <div className="overflow-x-auto">

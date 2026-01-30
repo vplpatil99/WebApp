@@ -31,7 +31,9 @@ namespace OptimalRXBE.Controllers
                 join lm in _db.LabCoMasters
                     on om.Sendtolabcode equals lm.LabCode into lmGroup
                 from lm in lmGroup.DefaultIfEmpty() // LEFT JOIN LabCoMaster
-
+                join pd in _db.Partydetails
+                    on om.PartyCode equals pd.PartyCode into pdGroup
+                from pd in pdGroup.DefaultIfEmpty() // LEFT JOIN PartyDetails
                 join d in _db.Deliveries
                     on om.GOrderNo equals d.GOrderNo into dGroup
                 from d in dGroup.DefaultIfEmpty() // LEFT JOIN Delivery
@@ -43,6 +45,7 @@ namespace OptimalRXBE.Controllers
                     co,
                     oi,
                     lm,   // 👈 LabCoMaster (nullable)
+                    pd,   // 👈 PartyDetails (nullable)
                     d     // 👈 Delivery (nullable)
                 };
 
@@ -68,7 +71,8 @@ namespace OptimalRXBE.Controllers
                         x.om.Fitting == "Y"
                         && x.co == null
                         && x.om.Status == "NC"
-                        && x.om.Processed == "Y");
+                        && x.om.Processed == "Y"
+                        && x.lm != null && x.lm.DefaultLab == "Y");
                     break;
 
                 case "CompletedButNotDelivered":
@@ -132,6 +136,7 @@ namespace OptimalRXBE.Controllers
                     L_OrderNo = x.om.LOrderNo,
                     registerno = x.om.RegisterNo,
                     party_cust_code = x.om.PartyCustCode,
+                    marketingPerson = x.pd != null ? x.pd.MarketingPerson : "",
                 })
                 .ToListAsync();
 
@@ -148,7 +153,13 @@ namespace OptimalRXBE.Controllers
                 join oi in _db.Orderinfos on om.GOrderNo equals oi.GOrderno
                 join oo in _db.OriginalOrders on om.GOrderNo equals oo.GOrderNo
                 join pd in _db.Partydetails on om.PartyCode equals pd.PartyCode
-                where om.GOrderNo == gOrderNo
+                // where om.GOrderNo == gOrderNo
+                where
+                (
+                    om.GOrderNo == gOrderNo ||
+                    om.LOrderNo == gOrderNo
+                )
+                && !string.IsNullOrEmpty(om.LOrderNo)
                 select new
                 {
                     om,
@@ -163,7 +174,7 @@ namespace OptimalRXBE.Controllers
 
             // 🔹 Production stages
             var stages = await _db.Stagescompleteds
-                .Where(s => s.GOrderno == gOrderNo)
+                .Where(s => s.GOrderno == order.om.GOrderNo)
                 .OrderByDescending(s => s.CompletionTime)
                 .Select(s => new
                 {
@@ -175,25 +186,11 @@ namespace OptimalRXBE.Controllers
                 .ToListAsync();
 
             // // 🔹 Delivery
-            // var delivery = await _db.Deliveries
-            //     .Where(d => d.GOrderNo == gOrderNo)
-            //     .Select(d => new
-            //     {
-            //         date = d.Dtime.HasValue
-            //             ? d.Dtime.Value.ToString("yyyy-MM-ddTHH:mm:ss")
-            //             : "",
-            //         challanNo = d.ChallanNo,
-            //         mode = d.ModeofDel,
-            //         // awbNo = d.AWBNo,
-            //         // contact = d.ContactNo
-            //     })
-            //     .ToListAsync();
-
             var delivery = await (
                 from d in _db.Deliveries
                 join c in _db.CourierMasters
                     on d.DCcode equals c.CourierId   // adjust column if different
-                where d.GOrderNo == gOrderNo
+                where d.GOrderNo == order.om.GOrderNo
                 select new
                 {
                     date = d.Dtime.HasValue
