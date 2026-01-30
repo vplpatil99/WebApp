@@ -5,6 +5,7 @@
 import { useEffect, useState, useMemo } from "react";
 import api from "../api/axios";
 import OrderStatusModal from "../components/OrderStatusModal";
+import * as XLSX from "xlsx";
 
 function Orders() {
   const [activeType, setActiveType] = useState("ALL"); 
@@ -74,38 +75,7 @@ const marketingSuggestions = useMemo(() => {
   )].slice(0, 6);
 }, [filterMarketing, orders]);
   // 🔹 SORT FIRST
-  // const sortedOrders = useMemo(() => {
-  //   if (!sortConfig.key) return orders;
 
-  //   const sorted = [...orders].sort((a, b) => {
-  //     let aVal = a[sortConfig.key];
-  //     let bVal = b[sortConfig.key];
-
-  //     if (aVal == null) return 1;
-  //     if (bVal == null) return -1;
-
-  //     if (
-  //       sortConfig.key === "order_Date" ||
-  //       sortConfig.key === "receivedOnDate" ||
-  //       sortConfig.key === "orderEntryTime"
-  //     ) {
-  //       aVal = new Date(aVal);
-  //       bVal = new Date(bVal);
-  //     }
-
-  //     if (typeof aVal === "number" && typeof bVal === "number") {
-  //       return sortConfig.direction === "asc"
-  //         ? aVal - bVal
-  //         : bVal - aVal;
-  //     }
-
-  //     return sortConfig.direction === "asc"
-  //       ? String(aVal).localeCompare(String(bVal))
-  //       : String(bVal).localeCompare(String(aVal));
-  //   });
-
-  //   return sorted;
-  // }, [orders, sortConfig]);
 
   const sortedOrders = useMemo(() => {
   if (!sortConfig.key) return filteredOrders;
@@ -223,6 +193,42 @@ useEffect(() => {
 
 
 
+const exportToExcel = () => {
+  if (sortedOrders.length === 0) {
+    alert("No data to export");
+    return;
+  }
+
+  const exportData = sortedOrders.map(o => ({
+    "Party Code": o.party_code,
+    "Order No": o.order_No,
+    "G Order No": o.gOrderNo,
+    "Entry Time": o.orderEntryTime
+      ? new Date(o.orderEntryTime).toLocaleString()
+      : "",
+    "Lens Type": o.lens_type,
+    "Coat": o.coatColor,
+    "Fitting": o.fitting,
+    "Type": o.stockorder === "Y" ? "STOCK" : "RX",
+    "Current Stage": o.currentStage,
+    "L Order No": o.l_OrderNo,
+    "Register No": o.registerno,
+    "Customer": o.party_cust_code,
+    "Marketing Person": o.marketingPerson,
+  }));
+
+  const worksheet = XLSX.utils.json_to_sheet(exportData);
+  const workbook = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(workbook, worksheet, "Orders");
+
+  XLSX.writeFile(
+    workbook,
+    `Orders_${fromDate}_to_${toDate}.xlsx`
+  );
+};
+
+
+
 
   return (
     <div className="p-6 bg-gray-100 min-h-screen">
@@ -261,19 +267,6 @@ useEffect(() => {
           />
         </div>
         {/* Party Code Filter */}
-        {/* <div>
-          <label className="block text-sm font-semibold mb-1">Party Code</label>
-          <input
-            type="text"
-            value={filterPartyCode}
-            onChange={(e) => {
-              setFilterPartyCode(e.target.value);
-              setCurrentPage(1);
-            }}
-            placeholder="Filter party code"
-            className="border px-3 py-2 rounded"
-          />
-        </div> */}
 
         <div className="relative">
           <label className="block text-sm font-semibold mb-1">Party Code</label>
@@ -287,20 +280,6 @@ useEffect(() => {
             placeholder="Filter party code"
             className="border px-3 py-2 rounded w-full"
           />
-
-          {/* {partySuggestions.length > 0 && (
-            <div className="absolute z-30 bg-white border rounded shadow w-full mt-1 max-h-40 overflow-y-auto">
-              {partySuggestions.map((p, i) => (
-                <div
-                  key={i}
-                  onMouseDown={() => setFilterPartyCode(p)}
-                  className="px-3 py-1 text-sm hover:bg-blue-100 cursor-pointer"
-                >
-                  {p}
-                </div>
-              ))}
-            </div>
-          )} */}
 
           {partySuggestions.length > 0 &&
             filterPartyCode &&
@@ -354,6 +333,15 @@ useEffect(() => {
                 ))}
               </div>
             )}
+        </div>
+
+        <div className="flex items-end">
+          <button
+            onClick={exportToExcel}
+            className="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700 h-[42px]"
+          >
+            Export Excel
+          </button>
         </div>
 
       </div>

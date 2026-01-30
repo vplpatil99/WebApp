@@ -13,7 +13,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("OptimalRXBE")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+3cf5c9cd46c4fab183c91f62416ba88ea758a04c")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+9d30e917ad3df27d3fb081394e2a7678ca4c1c30")]
 [assembly: System.Reflection.AssemblyProductAttribute("OptimalRXBE")]
 [assembly: System.Reflection.AssemblyTitleAttribute("OptimalRXBE")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]

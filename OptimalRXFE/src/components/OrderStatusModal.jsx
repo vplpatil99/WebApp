@@ -137,7 +137,7 @@ const trayColors = {
         </div>
 
         {/* DELIVERY DETAILS */}
-        {delivery.length > 0 && (
+        {/* {delivery.length > 0 && ( */}
           <div className="p-3">
           <h3 className="font-bold mb-1 text-sm">Delivery Details</h3>
           <div className="overflow-x-auto">
@@ -173,7 +173,7 @@ const trayColors = {
             </table>
           </div>
         </div>
-      )}
+      {/* )} */}
 <div className="p-3">
   <h3 className="font-bold mb-1 text-sm">Order Details</h3>
   <div className="overflow-x-auto">
