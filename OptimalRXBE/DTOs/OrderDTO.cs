@@ -8,6 +8,9 @@ namespace OptimalRXBE.DTOs
         public DateTime? OrderEntryTime { get; set; }
         public string Lens_type { get; set; } = null!;
         public string CoatColor { get; set; } = null!;
+        public double? Rate { get; set; } = 0;
+        public int Qty { get; set; } = 0;
+        public string UserName { get; set; } = null!;
         public string Fitting { get; set; } = null!;
         public string stockorder { get; set; }
         public string CurrentStage { get; set; } = null!;

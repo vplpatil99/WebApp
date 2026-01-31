@@ -1,6 +1,4 @@
-// import { useEffect, useState ,useMemo} from "react";
-// import React from "react";
-// import api from "../api/axios";
+
 
 import { useEffect, useState, useMemo } from "react";
 import api from "../api/axios";
@@ -12,7 +10,7 @@ function Orders() {
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
-  // const [date, setDate] = useState(new Date().toISOString().split("T")[0]);
+
   const [openStatus, setOpenStatus] = useState(false);
   const [selectedOrder, setSelectedOrder] = useState(null);
 const [searchValue, setSearchValue] = useState("");
@@ -29,7 +27,9 @@ const [searchValue, setSearchValue] = useState("");
   const pageSize = 20;
 
   const [filterPartyCode, setFilterPartyCode] = useState("");
-const [filterMarketing, setFilterMarketing] = useState("");
+  const [filterMarketing, setFilterMarketing] = useState("");
+  const [filterLensType, setFilterLensType] = useState("");
+  const [filterUserName, setFilterUserName] = useState("");
 
   // sorting state
   const [sortConfig, setSortConfig] = useState({
@@ -37,9 +37,8 @@ const [filterMarketing, setFilterMarketing] = useState("");
     direction: "asc",
   });
 
-
-
-  const filteredOrders = useMemo(() => {
+  // 🔹 FILTER FIRST
+const filteredOrders = useMemo(() => {
   return orders.filter(o => {
     const partyMatch = filterPartyCode
       ? o.party_code?.toLowerCase().includes(filterPartyCode.toLowerCase())
@@ -49,9 +48,18 @@ const [filterMarketing, setFilterMarketing] = useState("");
       ? o.marketingPerson?.toLowerCase().includes(filterMarketing.toLowerCase())
       : true;
 
-    return partyMatch && marketingMatch;
+    const lensTypeMatch = filterLensType
+      ? o.lens_type?.toLowerCase().includes(filterLensType.toLowerCase())
+      : true;
+
+    const userMatch = filterUserName
+      ? o.userName?.toLowerCase().includes(filterUserName.toLowerCase())
+      : true;
+
+    return partyMatch && marketingMatch && lensTypeMatch && userMatch;
   });
-}, [orders, filterPartyCode, filterMarketing]);
+}, [orders, filterPartyCode, filterMarketing, filterLensType, filterUserName]);
+
 
 const partySuggestions = useMemo(() => {
   if (!filterPartyCode) return [];
@@ -74,6 +82,31 @@ const marketingSuggestions = useMemo(() => {
       )
   )].slice(0, 6);
 }, [filterMarketing, orders]);
+const lensTypeSuggestions = useMemo(() => {
+  if (!filterLensType) return [];
+  return [...new Set(
+    orders
+      .map(o => o.lens_type)
+      .filter(l =>
+        l && l.toLowerCase().includes(filterLensType.toLowerCase())
+      )
+  )].slice(0, 6);
+}, [filterLensType, orders]);
+
+const userNameSuggestions = useMemo(() => {
+  if (!filterUserName) return [];
+  return [...new Set(
+    orders
+      .map(o => o.userName)
+      .filter(u =>
+        u && u.toLowerCase().includes(filterUserName.toLowerCase())
+      )
+  )].slice(0, 6);
+}, [filterUserName, orders]);
+
+
+
+
   // 🔹 SORT FIRST
 
 
@@ -199,23 +232,43 @@ const exportToExcel = () => {
     return;
   }
 
+  // const exportData = sortedOrders.map(o => ({
+  //   "Party Code": o.party_code,
+  //   "Order No": o.order_No,
+  //   "G Order No": o.gOrderNo,
+  //   "Entry Time": o.orderEntryTime
+  //     ? new Date(o.orderEntryTime).toLocaleString()
+  //     : "",
+  //   "Lens Type": o.lens_type,
+  //   "Coat": o.coatColor,
+  //   "Fitting": o.fitting,
+  //   "Type": o.stockorder === "Y" ? "STOCK" : "RX",
+  //   "Current Stage": o.currentStage,
+  //   "L Order No": o.l_OrderNo,
+  //   "Register No": o.registerno,
+  //   "Customer": o.party_cust_code,
+  //   "Marketing Person": o.marketingPerson,
+  // }));
+
+
   const exportData = sortedOrders.map(o => ({
-    "Party Code": o.party_code,
-    "Order No": o.order_No,
-    "G Order No": o.gOrderNo,
-    "Entry Time": o.orderEntryTime
-      ? new Date(o.orderEntryTime).toLocaleString()
-      : "",
-    "Lens Type": o.lens_type,
-    "Coat": o.coatColor,
-    "Fitting": o.fitting,
-    "Type": o.stockorder === "Y" ? "STOCK" : "RX",
-    "Current Stage": o.currentStage,
-    "L Order No": o.l_OrderNo,
-    "Register No": o.registerno,
-    "Customer": o.party_cust_code,
-    "Marketing Person": o.marketingPerson,
-  }));
+  "Party Code": o.party_code,
+  "Order No": o.order_No,
+  "G Order No": o.gOrderNo,
+  "Entry Time": o.orderEntryTime
+    ? new Date(o.orderEntryTime).toLocaleString()
+    : "",
+  "Lens Type": o.lens_type,
+  "Coat": o.coatColor,
+  "Fitting": o.fitting,
+  "Type": o.stockorder === "Y" ? "STOCK" : "RX",
+  "Current Stage": o.currentStage,
+  "L Order No": o.l_OrderNo,
+  "Register No": o.registerno,
+  "Customer": o.party_cust_code,
+  "Marketing Person": o.marketingPerson,
+  "User Name": o.userName, // ✅ NEW FIELD
+}));
 
   const worksheet = XLSX.utils.json_to_sheet(exportData);
   const workbook = XLSX.utils.book_new();
@@ -290,7 +343,7 @@ const exportToExcel = () => {
                     key={i}
                     onMouseDown={() => {
                       setFilterPartyCode(p);
-                      setPartySuggestions([]); // 👈 hide dropdown after select
+                      // setPartySuggestions([]); // 👈 hide dropdown after select
                     }}
                     className="px-3 py-1 text-sm hover:bg-blue-100 cursor-pointer"
                   >
@@ -324,7 +377,7 @@ const exportToExcel = () => {
                     key={i}
                     onMouseDown={() => {
                       setFilterMarketing(m);
-                      setMarketingSuggestions([]);
+                      // setMarketingSuggestions([]);
                     }}
                     className="px-3 py-1 text-sm hover:bg-blue-100 cursor-pointer"
                   >
@@ -334,6 +387,72 @@ const exportToExcel = () => {
               </div>
             )}
         </div>
+
+        {/* Lens Type Filter */}
+        <div className="relative">
+          <label className="block text-sm font-semibold mb-1">Lens Type</label>
+
+          <input
+            type="text"
+            value={filterLensType}
+            onChange={(e) => {
+              setFilterLensType(e.target.value);
+              setCurrentPage(1);
+            }}
+            placeholder="Filter lens type"
+            className="border px-3 py-2 rounded w-64"
+          />
+
+          {lensTypeSuggestions.length > 0 &&
+            filterLensType &&
+            !lensTypeSuggestions.includes(filterLensType) && (
+              <div className="absolute z-30 bg-white border rounded shadow w-full mt-1 max-h-40 overflow-y-auto">
+                {lensTypeSuggestions.map((l, i) => (
+                  <div
+                    key={i}
+                    onMouseDown={() => setFilterLensType(l)}
+                    className="px-3 py-1 text-sm hover:bg-blue-100 cursor-pointer"
+                  >
+                    {l}
+                  </div>
+                ))}
+              </div>
+            )}
+        </div>
+
+        {/* User Name Filter */}
+        <div className="relative">
+          <label className="block text-sm font-semibold mb-1">User Name</label>
+
+          <input
+            type="text"
+            value={filterUserName}
+            onChange={(e) => {
+              setFilterUserName(e.target.value);
+              setCurrentPage(1);
+            }}
+            placeholder="Filter user name"
+            className="border px-3 py-2 rounded w-full"
+          />
+
+          {userNameSuggestions.length > 0 &&
+            filterUserName &&
+            !userNameSuggestions.includes(filterUserName) && (
+              <div className="absolute z-30 bg-white border rounded shadow w-full mt-1 max-h-40 overflow-y-auto">
+                {userNameSuggestions.map((u, i) => (
+                  <div
+                    key={i}
+                    onMouseDown={() => setFilterUserName(u)}
+                    className="px-3 py-1 text-sm hover:bg-blue-100 cursor-pointer"
+                  >
+                    {u}
+                  </div>
+                ))}
+              </div>
+            )}
+        </div>
+
+
 
         <div className="flex items-end">
           <button
@@ -447,6 +566,8 @@ const exportToExcel = () => {
                       <th className="px-4 py-3 cursor-pointer" onClick={() => requestSort("coatColor")}>
                         Coat {sortIcon("coatColor")}
                       </th>
+                      <th className="px-4 py-3">Rate</th>
+                      <th className="px-4 py-3">Qty</th>
                       <th className="px-4 py-3 cursor-pointer" onClick={() => requestSort("fitting")}>
                         Fit {sortIcon("fitting")}
                       </th>
@@ -460,6 +581,7 @@ const exportToExcel = () => {
                       <th className="px-4 py-3">Reg No</th>
                       <th className="px-4 py-3">Customer</th>
                       <th className="px-4 py-3">Marketing Person</th>
+                      <th className="px-4 py-3">User Name</th>
                     </tr>
                   </thead>
 
@@ -481,6 +603,8 @@ const exportToExcel = () => {
                           {order.lens_type}
                         </td>
                         <td className="px-4 py-2">{order.coatColor}</td>
+                        <td className="px-4 py-2">{order.rate}</td>
+                        <td className="px-4 py-2">{order.qty}</td>
                         <td className="px-4 py-2">{order.fitting}</td>
                         <td className="px-4 py-2">
                           <span
@@ -498,6 +622,7 @@ const exportToExcel = () => {
                         <td className="px-4 py-2">{order.registerno}</td>
                         <td className="px-4 py-2">{order.party_cust_code || "-"}</td>
                         <td className="px-4 py-2">{order.marketingPerson || "-"}</td>
+                        <td className="px-4 py-2">{order.userName || "-"}</td>
                       </tr>
                     ))}
                   </tbody>
